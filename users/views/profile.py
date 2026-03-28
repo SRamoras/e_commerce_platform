@@ -1,11 +1,10 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth.decorators import login_required
 
 
+@login_required(login_url='login')
 def profile_view(request):
-    if not request.user.is_authenticated:
-        return redirect('login')
-
     profile = request.user.profile_set.first()
     context = {
         'username': request.user.username,
