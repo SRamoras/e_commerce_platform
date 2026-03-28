@@ -8,12 +8,12 @@ def login_view(request):
         password = request.POST.get('password')
 
         if not username or not password:
-            return render(request, 'users/login.html', {'error': 'Preenche todos os campos.'})
+            return render(request, 'users/login.html', {'error': 'Please fill in all fields.'})
 
         user = authenticate(request, username=username, password=password)
 
         if user is None:
-            return render(request, 'users/login.html', {'error': 'Username ou password incorretos.', 'username': username})
+            return render(request, 'users/login.html', {'error': 'Invalid username or password.', 'username': username})
 
         login(request, user)
         return redirect('profile')

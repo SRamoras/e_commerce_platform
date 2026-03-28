@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Perfil</title>
+    <title>Profile</title>
 </head>
 <body>
-    <h1>O meu perfil</h1>
+    <h1>My Profile</h1>
     <p><b>Username:</b> {{ username }}</p>
     <p><b>Role:</b> {{ role }}</p>
 
     <hr>
-    <h2>Atualizar perfil</h2>
+    <h2>Update Profile</h2>
 
     {% if success %}
         <p style="color:green;">{{ success }}</p>
@@ -20,11 +20,11 @@
         <input type="hidden" name="action" value="update_profile">
         <label>Email</label><br>
         <input type="email" name="email" value="{{ email }}"><br><br>
-        <button type="submit">Guardar</button>
+        <button type="submit">Save</button>
     </form>
 
     <hr>
-    <h2>Mudar password</h2>
+    <h2>Change Password</h2>
 
     {% if error_password %}
         <p style="color:red;">{{ error_password }}</p>
@@ -37,11 +37,11 @@
     <form method="POST">
         {% csrf_token %}
         <input type="hidden" name="action" value="change_password">
-        <label>Password antiga</label><br>
+        <label>Old Password</label><br>
         <input type="password" name="old_password" required><br><br>
-        <label>Password nova</label><br>
+        <label>New Password</label><br>
         <input type="password" name="new_password" required><br><br>
-        <button type="submit">Alterar password</button>
+        <button type="submit">Change Password</button>
     </form>
 
     <hr>

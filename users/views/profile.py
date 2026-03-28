@@ -21,19 +21,19 @@ def profile_view(request):
             if email:
                 request.user.email = email
                 request.user.save()
-            context['success'] = 'Perfil atualizado!'
+            context['success'] = 'Profile updated successfully!'
 
         elif action == 'change_password':
             old_password = request.POST.get('old_password')
             new_password = request.POST.get('new_password')
 
             if not request.user.check_password(old_password):
-                context['error_password'] = 'Password antiga incorreta.'
+                context['error_password'] = 'Old password is incorrect.'
             else:
                 request.user.set_password(new_password)
                 request.user.save()
                 update_session_auth_hash(request, request.user)
-                context['success_password'] = 'Password alterada com sucesso!'
+                context['success_password'] = 'Password changed successfully!'
 
         context['email'] = request.user.email
 
