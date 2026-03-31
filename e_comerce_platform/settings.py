@@ -40,6 +40,8 @@ INSTALLED_APPS = [
     "rest_framework",
     "users.apps.UsersConfig",
     "products.apps.ProductsConfig",
+    "cart",
+    "orders",
 ]
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
