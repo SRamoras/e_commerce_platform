@@ -4,6 +4,30 @@ from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVectorField
 
 
+class StockChange(models.Model):
+    product = models.ForeignKey(
+        "Product", on_delete=models.CASCADE, related_name="stock_changes"
+    )
+    variant = models.ForeignKey(
+        "ProductVariant",
+        on_delete=models.CASCADE,
+        related_name="stock_changes",
+        null=True,
+    )
+    change_qty = models.IntegerField()
+    reason = models.CharField(
+        max_length=20,
+        choices=[
+            ("order", "Order"),
+            ("restock", "Restock"),
+            ("manual", "Manual"),
+            ("order_cancelled", "Order Cancelled"),
+        ],
+    )
+    user = models.ForeignKey("auth.User", null=True, on_delete=models.SET_NULL)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
 class ProductType(models.TextChoices):
     PHYSICAL = "physical", "Physical"
     DIGITAL = "digital", "Digital"
