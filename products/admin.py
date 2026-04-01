@@ -25,6 +25,7 @@ class CategoryAdmin(admin.ModelAdmin):
 class ProductAdmin(admin.ModelAdmin):
     list_display = [
         "name",
+        "seller",
         "category",
         "product_type",
         "base_price_display",
@@ -32,13 +33,13 @@ class ProductAdmin(admin.ModelAdmin):
         "created_at",
     ]
     list_filter = ["is_active", "product_type", "category", "created_at"]
-    search_fields = ["name", "description"]
+    search_fields = ["name", "description", "seller__username"]
     prepopulated_fields = {"slug": ("name",)}
     readonly_fields = ["created_at", "updated_at"]
     inlines = [ProductVariantInline]
 
     fieldsets = (
-        (None, {"fields": ("name", "slug", "description")}),
+        (None, {"fields": ("name", "slug", "description", "seller")}),
         ("Tipo e Categoria", {"fields": ("product_type", "category")}),
         ("Preço", {"fields": ("base_price", "image")}),
         ("Estado", {"fields": ("is_active",)}),
