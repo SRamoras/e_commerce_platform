@@ -1,7 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Q
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_http_methods
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
@@ -272,3 +272,39 @@ def category_list(request):
         for c in categories
     ]
     return Response(results)
+
+
+# --- HTML Views ---
+
+def product_list_view(request):
+    products = (
+        Product.objects.filter(is_active=True)
+        .select_related("category")
+        .prefetch_related("variants")
+    )
+
+    categories = Category.objects.all()
+    category_slug = request.GET.get("category")
+    if category_slug:
+        products = products.filter(category__slug=category_slug)
+
+    q = request.GET.get("q")
+    if q:
+        products = products.filter(Q(name__icontains=q) | Q(description__icontains=q))
+
+    products = products.order_by("-created_at")
+
+    paginator = Paginator(products, 12)
+    page_obj = paginator.get_page(request.GET.get("page", 1))
+
+    return render(request, "products/product_list.html", {
+        "page_obj": page_obj,
+        "categories": categories,
+        "selected_category": category_slug,
+        "q": q or "",
+    })
+
+
+def product_detail_view(request, pk):
+    product = get_object_or_404(Product, pk=pk, is_active=True)
+    return render(request, "products/product_detail.html", {"product": product})

@@ -1,0 +1,66 @@
+{% extends "core/base.html" %}
+
+{% block title %}{{ product.name }} - ShopDjango{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'product_list' %}">Products</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'product_list' %}?category={{ product.category.slug }}">{{ product.category.name }}</a></li>
+        <li class="breadcrumb-item active">{{ product.name }}</li>
+    </ol>
+</nav>
+
+<div class="row g-4">
+    <div class="col-md-5">
+        {% if product.image %}
+            <img src="{{ product.image.url }}" class="img-fluid rounded shadow" alt="{{ product.name }}">
+        {% else %}
+            <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height:320px;">
+                <i class="bi bi-image text-muted" style="font-size:4rem;"></i>
+            </div>
+        {% endif %}
+    </div>
+    <div class="col-md-7">
+        <span class="badge bg-secondary mb-2">{{ product.category.name }}</span>
+        <h2>{{ product.name }}</h2>
+        <p class="text-muted">{{ product.description }}</p>
+
+        <h4 class="text-primary mt-3">${{ product.base_price }}</h4>
+
+        {% if product.variants.exists %}
+        <h6 class="mt-3">Variants</h6>
+        <table class="table table-sm table-bordered">
+            <thead class="table-light">
+                <tr>
+                    <th>Name</th>
+                    <th>SKU</th>
+                    <th>Price</th>
+                    <th>Stock</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in product.variants.all %}
+                <tr>
+                    <td>{{ v.name }}</td>
+                    <td><code>{{ v.sku }}</code></td>
+                    <td>${{ v.price }}</td>
+                    <td>{{ v.stock }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+
+        {% if product.seller %}
+        <p class="mt-3 text-muted small">
+            Sold by <a href="{% url 'seller_profile' product.seller.username %}">{{ product.seller.username }}</a>
+        </p>
+        {% endif %}
+
+        <a href="{% url 'product_list' %}" class="btn btn-outline-secondary mt-3">
+            <i class="bi bi-arrow-left"></i> Back to Products
+        </a>
+    </div>
+</div>
+{% endblock %}

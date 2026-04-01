@@ -1,56 +1,58 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Profile</title>
-</head>
-<body>
-    <h1>My Profile</h1>
-    <p><b>Username:</b> {{ username }}</p>
-    <p><b>Role:</b> {{ role }}</p>
+{% extends "core/base.html" %}
 
-    <hr>
-    <h2>Update Profile</h2>
+{% block title %}My Profile - ShopDjango{% endblock %}
 
-    {% if success %}
-        <p style="color:green;">{{ success }}</p>
-    {% endif %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
 
-    <form method="POST">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="update_profile">
-        <label>Email</label><br>
-        <input type="email" name="email" value="{{ email }}"><br><br>
-        <button type="submit">Save</button>
-    </form>
+        <h2 class="mb-4">My Profile</h2>
+        <p><b>Username:</b> {{ username }}</p>
+        <p><b>Role:</b> <span class="badge bg-primary">{{ role }}</span></p>
 
-    <hr>
-    <h2>Change Password</h2>
+        {% if user_role == "seller" %}
+        <a href="{% url 'orders:seller_orders' %}" class="btn btn-outline-primary btn-sm mb-3">
+            <i class="bi bi-box-seam"></i> View My Orders
+        </a>
+        {% endif %}
 
-    {% if error_password %}
-        <p style="color:red;">{{ error_password }}</p>
-    {% endif %}
+        <hr>
+        <h5>Update Profile</h5>
+        {% if success %}
+            <div class="alert alert-success">{{ success }}</div>
+        {% endif %}
+        <form method="POST" class="mb-4">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="update_profile">
+            <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input type="email" name="email" class="form-control" value="{{ email }}">
+            </div>
+            <button type="submit" class="btn btn-primary">Save</button>
+        </form>
 
-    {% if success_password %}
-        <p style="color:green;">{{ success_password }}</p>
-    {% endif %}
+        <hr>
+        <h5>Change Password</h5>
+        {% if error_password %}
+            <div class="alert alert-danger">{{ error_password }}</div>
+        {% endif %}
+        {% if success_password %}
+            <div class="alert alert-success">{{ success_password }}</div>
+        {% endif %}
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="change_password">
+            <div class="mb-3">
+                <label class="form-label">Old Password</label>
+                <input type="password" name="old_password" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">New Password</label>
+                <input type="password" name="new_password" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-warning">Change Password</button>
+        </form>
 
-    <form method="POST">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="change_password">
-        <label>Old Password</label><br>
-        <input type="password" name="old_password" required><br><br>
-        <label>New Password</label><br>
-        <input type="password" name="new_password" required><br><br>
-        <button type="submit">Change Password</button>
-    </form>
-
-    {% if role == "seller" %}
-    <hr>
-    <h2>Seller</h2>
-    <a href="{% url 'orders:seller_orders' %}">View My Orders</a>
-    {% endif %}
-
-    <hr>
-    <a href="{% url 'logout' %}">Logout</a>
-</body>
-</html>
+    </div>
+</div>
+{% endblock %}

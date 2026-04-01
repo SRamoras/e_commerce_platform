@@ -1,11 +1,25 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>{{ username }} - Seller Profile</title>
-</head>
-<body>
-    <h1>{{ username }}</h1>
-    <p><b>Bio:</b> {{ bio }}</p>
-    <p><b>Active Products:</b> {{ product_count }}</p>
-</body>
-</html>
+{% extends "core/base.html" %}
+
+{% block title %}{{ username }} - Seller Profile{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card shadow-sm text-center p-4">
+            <i class="bi bi-person-circle display-3 text-secondary"></i>
+            <h4 class="mt-2">{{ username }}</h4>
+            <span class="badge bg-success">Seller</span>
+            {% if bio %}
+                <p class="mt-3 text-muted">{{ bio }}</p>
+            {% endif %}
+            <p class="mt-2"><i class="bi bi-box-seam"></i> <b>{{ product_count }}</b> active product{{ product_count|pluralize }}</p>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <h5>Products by {{ username }}</h5>
+        <a href="{% url 'product_list' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Back to Products
+        </a>
+    </div>
+</div>
+{% endblock %}
