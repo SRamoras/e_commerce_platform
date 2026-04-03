@@ -5,7 +5,9 @@ from django.conf import settings
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.contrib.postgres.indexes import GinIndex
-from django.contrib.postgres.search import SearchVectorField
+from django.contrib.postgres.search import SearchVectorField, SearchVector
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 
 class StockChange(models.Model):
@@ -109,3 +111,11 @@ class ProductVariant(models.Model):
                 raise ValidationError(
                     "Digital products must have exactly one variant with stock=0."
                 )
+
+
+@receiver(post_save, sender=Product)
+def update_search_vector(sender, instance, **kwargs):
+    Product.objects.filter(pk=instance.pk).update(
+        search_vector=SearchVector("name", weight="A")
+        + SearchVector("description", weight="B")
+    )
