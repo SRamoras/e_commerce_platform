@@ -1,4 +1,6 @@
 import json
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
 from django.views.decorators.http import require_http_methods
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
@@ -17,6 +19,19 @@ from .services import (
 
 def is_buyer(user):
     return Profile.objects.filter(user=user, role=Profile.Role.BUYER).exists()
+
+
+@login_required
+def cart_page_view(request):
+    if not is_buyer(request.user):
+        return render(
+            request,
+            "cart/cart.html",
+            {"error": "Apenas buyers podem acessar o carrinho.", "cart": None},
+        )
+
+    cart_data = get_cart_contents(request.user)
+    return render(request, "cart/cart.html", {"cart": cart_data})
 
 
 @api_view(["GET"])
