@@ -1,7 +1,4 @@
-<<<<<<< HEAD
 from django.conf import settings
-=======
->>>>>>> main
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.contrib.postgres.indexes import GinIndex
