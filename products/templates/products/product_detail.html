@@ -29,19 +29,9 @@
         <h4 class="text-primary mt-3">${{ product.base_price }}</h4>
 
         {% if product.variants.exists %}
-        <form method="post" action="{% url 'cart:add_html' %}" class="mt-4">
-            {% csrf_token %}
-            <input type="hidden" name="next" value="{% url 'product_detail' product.pk %}">
-
+        <div class="mt-4">
             <div class="mb-3">
-                <label for="variant_id" class="form-label fw-semibold">Select Variant</label>
-                <select name="variant_id" id="variant_id" class="form-select">
-                    {% for v in product.variants.all %}
-                    <option value="{{ v.pk }}" {% if v.stock == 0 %}disabled{% endif %}>
-                        {{ v.name }} — ${{ v.price }}{% if v.stock > 0 %} ({{ v.stock }} in stock){% else %} (out of stock){% endif %}
-                    </option>
-                    {% endfor %}
-                </select>
+                <label class="form-label fw-semibold">Variants</label>
                 <div class="mt-2">
                     {% for v in product.variants.all %}
                         {% if v.stock > 5 %}
@@ -55,15 +45,34 @@
                 </div>
             </div>
 
-            <div class="mb-3">
-                <label for="quantity" class="form-label fw-semibold">Quantity</label>
-                <input type="number" name="quantity" id="quantity" value="1" min="1" class="form-control" style="width:100px;">
+            {% if user_role == "seller" %}
+            <div class="alert alert-info py-2 mt-3">
+                <i class="bi bi-info-circle"></i> Sellers cannot purchase products.
             </div>
-
-            <button type="submit" class="btn btn-primary">
-                <i class="bi bi-cart-plus"></i> Add to Cart
-            </button>
-        </form>
+            {% else %}
+            <form method="post" action="{% url 'cart:add_html' %}">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{% url 'product_detail' product.pk %}">
+                <div class="mb-3">
+                    <label for="variant_id" class="form-label fw-semibold">Select Variant</label>
+                    <select name="variant_id" id="variant_id" class="form-select">
+                        {% for v in product.variants.all %}
+                        <option value="{{ v.pk }}" {% if v.stock == 0 %}disabled{% endif %}>
+                            {{ v.name }} — ${{ v.price }}{% if v.stock > 0 %} ({{ v.stock }} in stock){% else %} (out of stock){% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="quantity" class="form-label fw-semibold">Quantity</label>
+                    <input type="number" name="quantity" id="quantity" value="1" min="1" class="form-control" style="width:100px;">
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-cart-plus"></i> Add to Cart
+                </button>
+            </form>
+            {% endif %}
+        </div>
         {% endif %}
 
         {% if product.seller %}

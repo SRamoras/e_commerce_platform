@@ -55,6 +55,7 @@
                     <strong class="text-primary">${{ product.base_price }}</strong>
                     <div class="d-flex gap-1">
                         <a href="{% url 'product_detail' product.pk %}" class="btn btn-sm btn-outline-primary">View</a>
+                        {% if user_role != "seller" %}
                         {% with first_variant=product.variants.all.0 %}
                         {% if first_variant %}
                         <form method="post" action="{% url 'cart:add_html' %}">
@@ -68,6 +69,7 @@
                         </form>
                         {% endif %}
                         {% endwith %}
+                        {% endif %}
                     </div>
                 </div>
             </div>
