@@ -1,6 +1,36 @@
+from django import forms
 from django.contrib import admin
+from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.utils.html import format_html
 from .models import Product, Category, ProductVariant
+
+User = get_user_model()
+
+
+def seller_users_queryset():
+    from users.models import Profile
+    seller_ids = Profile.objects.filter(role=Profile.Role.SELLER).values_list("user_id", flat=True)
+    return User.objects.filter(pk__in=seller_ids)
+
+
+class ProductAdminForm(forms.ModelForm):
+    class Meta:
+        model = Product
+        fields = "__all__"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["seller"].queryset = seller_users_queryset()
+        self.fields["seller"].help_text = "Only users with the Seller role are listed."
+
+    def clean_seller(self):
+        seller = self.cleaned_data.get("seller")
+        if seller:
+            from users.models import Profile
+            if not Profile.objects.filter(user=seller, role=Profile.Role.SELLER).exists():
+                raise ValidationError("This user does not have the Seller role.")
+        return seller
 
 
 class ProductVariantInline(admin.TabularInline):
@@ -23,6 +53,7 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
+    form = ProductAdminForm
     list_display = [
         "name",
         "seller",
