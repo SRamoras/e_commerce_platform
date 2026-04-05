@@ -370,6 +370,6 @@ Tests cover seller/buyer role enforcement, seller order visibility (sellers only
 
 | Contributor | Key contributions |
 |---|---|
-| **corujitoo / Jose Cleber** | Project initialisation, Django setup, Products app, Category & Product models, stock services, search signal |
-| **Sabrina** | Cart and Orders apps, cart/checkout logic, URL wiring |
-| **SRamoras** | Users app, login/register/profile views, seller profile, Bootstrap 5 base template, home page, product list/detail HTML pages, seller product management, buyer/seller role restrictions, admin improvements, cart bug fixes, seed command & Makefile, product cards showing seller |
+| **Jose Cleber** | Products app, Category, Product & ProductVariant models, migrations, product list/detail/category/search views, product admin, URL routing |
+| **Sabrina** | Cart app (models, views, services, admin, URLs), Orders app (models, views, services, admin, URLs), cart service layer, order service layer |
+| **SRamoras** | Project initialisation, Django setup, Users app, login/register/profile views, seller profile, Bootstrap 5 base template, home page, product list/detail HTML pages, seller product management, buyer/seller role restrictions, admin improvements, cart bug fixes, seed command & Makefile, product cards showing seller |
