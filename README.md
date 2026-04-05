@@ -8,6 +8,8 @@ A demonstration e-commerce web application built with Django. It supports two us
 
 - [Features](#features)
 - [Tech Stack](#tech-stack)
+- [Architecture & Technical Decisions](#architecture--technical-decisions)
+- [Data Model](#data-model)
 - [Getting Started](#getting-started)
 - [Default Accounts](#default-accounts)
 - [Using the Website](#using-the-website)
@@ -45,6 +47,78 @@ A demonstration e-commerce web application built with Django. It supports two us
 | Frontend | Django Templates + Bootstrap 5 |
 | API | Django REST Framework |
 | Image processing | Pillow |
+
+---
+
+## Architecture & Technical Decisions
+
+### Why Django?
+
+Django was chosen for its "batteries included" philosophy — built-in ORM, admin panel, authentication system, form validation, and migrations meant we could focus on business logic rather than plumbing. The Django admin alone saved significant time by giving us a fully functional back-office for managing users, products, and orders without writing a single admin view.
+
+### Why Django REST Framework for the API?
+
+The project has two distinct interaction patterns: HTML pages rendered server-side (browsing, cart, checkout) and JSON endpoints for programmatic access (cart operations, order management, product CRUD for sellers). DRF was used exclusively for the JSON layer, keeping template views and API views cleanly separated into `urls.py` and `api_urls.py` per app. This avoids the complexity of a full SPA while still exposing a proper API.
+
+### Why SQLite?
+
+This is a demonstration project — SQLite requires zero configuration, ships with Python, and is more than sufficient for local development and evaluation. The Django ORM abstracts the database layer entirely, so migrating to PostgreSQL for production would require only a settings change and no code modifications.
+
+### Services Layer
+
+Business logic lives in `services.py` inside each app rather than in views or models. This keeps views thin (they only handle HTTP concerns) and makes the logic independently testable. For example:
+
+- `orders/services.py` — handles checkout (stock decrement, order creation, cart close) inside a single `transaction.atomic()` block, ensuring no partial state if anything fails
+- `products/services.py` — all stock mutations go through `decrement_stock` / `restore_stock`, which also write an audit entry to `StockChange` on every call
+- `orders/services.py:cancel_order` — enforces a 30-minute cancellation window and restores stock atomically
+
+### Role-based Access Control
+
+User roles (Buyer / Seller) are stored on a `Profile` model with a `OneToMany` relation to Django's built-in `User`. Roles are enforced at the view level — API endpoints return `403` if the role doesn't match, and HTML views redirect with an error message. A `post_save` signal on `User` automatically creates a `Profile` with the default `buyer` role on registration, so no user is ever without a role.
+
+### Stock Integrity
+
+Stock decrements use a conditional `UPDATE` query (`stock__gte=quantity`) rather than a read-then-write pattern, preventing race conditions when two buyers try to purchase the last item simultaneously. Every stock change (order, restock, cancellation) is recorded in `StockChange` for a full audit trail.
+
+### Cart Design
+
+The cart is persisted in the database (not just the session) so it survives browser restarts. Each `Cart` has a status (`open` / `closed`). On checkout the cart is closed atomically with the order creation — it is never deleted, preserving the purchase history.
+
+---
+
+## Data Model
+
+```
+User (Django built-in)
+ └── Profile          role: buyer | seller
+
+Category
+ └── Category         (self-referential, max 2 levels deep)
+
+Product
+ ├── Category         FK — protected on delete
+ ├── User (seller)    FK — nullable
+ └── ProductVariant[] sku, price, stock
+      └── StockChange  audit log of every stock movement
+
+Cart
+ ├── User (buyer)
+ └── CartItem[]
+      └── ProductVariant
+
+Order
+ ├── User (buyer)
+ └── OrderItem[]      unit_price snapshotted at creation time
+      └── ProductVariant
+```
+
+**Key modelling decisions:**
+
+- `unit_price` on `OrderItem` is written once at checkout and never updated — the price a customer paid is immutable even if the product price changes later
+- `base_price` on `Product` is the fallback display price; the actual selling price lives on `ProductVariant`
+- `is_active` on `Product` and `ProductVariant` is a soft-delete flag — records are never hard-deleted, preserving referential integrity for historical orders
+- All money fields use `DecimalField` — never `FloatField` — to avoid floating-point rounding errors
+- Order status transitions are enforced in a `transition_status()` model method, not scattered across views
 
 ---
 
@@ -170,7 +244,15 @@ After running `make seed` (or `make setup`) the following accounts are available
 ## REST API Reference
 
 All API endpoints are under `/api/` or `/orders/`.
-Authenticated endpoints require a logged-in session (or session cookie).
+Authenticated endpoints require a logged-in session cookie. To authenticate via curl, first POST to the login endpoint and save the cookie jar:
+
+```bash
+# Log in and save the session cookie
+curl -c cookies.txt -X POST http://127.0.0.1:8000/users/login/ \
+  -d "username=buyer&password=buyer123"
+```
+
+Then pass `-b cookies.txt` on subsequent requests.
 
 ### Products
 
@@ -184,6 +266,19 @@ Authenticated endpoints require a logged-in session (or session cookie).
 | `PUT` | `/api/products/<id>/update/` | Seller (owner) | Update a product |
 | `DELETE` | `/api/products/<id>/delete/` | Seller (owner) | Soft-delete a product |
 
+```bash
+# List products
+curl http://127.0.0.1:8000/api/products/
+
+# Search
+curl "http://127.0.0.1:8000/api/products/search/?q=headphones"
+
+# Create a product (seller only)
+curl -b cookies.txt -X POST http://127.0.0.1:8000/api/products/create/ \
+  -H "Content-Type: application/json" \
+  -d '{"name":"My Product","slug":"my-product","description":"..","category":1,"base_price":"9.99"}'
+```
+
 ### Cart
 
 | Method | URL | Auth | Description |
@@ -194,6 +289,16 @@ Authenticated endpoints require a logged-in session (or session cookie).
 | `DELETE` | `/api/cart/remove/<item_id>/` | Buyer | Remove item from cart |
 | `POST` | `/api/cart/clear/` | Buyer | Empty the cart |
 
+```bash
+# Add variant ID 1 to cart
+curl -b cookies.txt -X POST http://127.0.0.1:8000/api/cart/add/ \
+  -H "Content-Type: application/json" \
+  -d '{"variant_id": 1, "quantity": 2}'
+
+# View cart
+curl -b cookies.txt http://127.0.0.1:8000/api/cart/
+```
+
 ### Orders
 
 | Method | URL | Auth | Description |
@@ -202,9 +307,21 @@ Authenticated endpoints require a logged-in session (or session cookie).
 | `GET` | `/orders/` | Buyer | List own orders (paginated) |
 | `GET` | `/orders/<id>/` | Buyer | Order detail |
 | `POST` | `/orders/<id>/confirm/` | Buyer | Confirm a pending order |
-| `POST` | `/orders/<id>/cancel/` | Buyer | Cancel an order |
+| `POST` | `/orders/<id>/cancel/` | Buyer | Cancel an order (within 30 min) |
 | `POST` | `/orders/<order_id>/items/<item_id>/fulfil/` | Seller | Mark item as fulfilled |
 | `GET` | `/orders/summary/` | Seller | Sales summary (optional `start_date`, `end_date`) |
+
+```bash
+# Checkout (converts cart to order)
+curl -b cookies.txt -X POST http://127.0.0.1:8000/orders/checkout/
+
+# List my orders
+curl -b cookies.txt http://127.0.0.1:8000/orders/
+
+# Seller sales summary for a date range
+curl -b seller-cookies.txt \
+  "http://127.0.0.1:8000/orders/summary/?start_date=2024-01-01&end_date=2024-12-31"
+```
 
 ---
 
